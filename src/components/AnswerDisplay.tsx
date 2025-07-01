@@ -22,10 +22,10 @@ const AnswerDisplay = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">
       {/* 답변 카드 */}
-      <Card className="border-2 border-blue-500">
+      <Card className="border-2 border-point">
         <CardContent className="p-6 space-y-4">
           {/* 답변 헤더 */}
-          <div className="flex items-center gap-2 text-xl font-medium text-orange-500">
+          <div className="flex items-center gap-2 text-xl font-medium text-point">
             <CheckCircle className="h-6 w-6" />
             <span>답변</span>
           </div>
@@ -36,7 +36,7 @@ const AnswerDisplay = ({
 
           {/* 결재라인 */}
           <div className="space-y-2">
-            <h3 className="text-red-500 font-medium">• 결재라인</h3>
+            <h3 className="text-point font-medium">• 결재라인</h3>
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="text-gray-700">
                 {webhookResponse?.결재라인 || '데이터가 없습니다.'}
@@ -74,7 +74,7 @@ const AnswerDisplay = ({
             <Button
               variant="outline"
               onClick={() => onFeedback(true)}
-              className="border-orange-500 text-orange-500 hover:bg-orange-50"
+              className="border-point text-point hover:bg-point/5"
             >
               <ThumbsUp className="h-4 w-4 mr-2" />
               도움됨
@@ -102,7 +102,7 @@ const AnswerDisplay = ({
           </Button>
           <Button
             variant="outline"
-            className="text-orange-500 border-orange-500"
+            className="text-point border-point hover:bg-point/5"
             onClick={() => window.print()}
           >
             답변 복사

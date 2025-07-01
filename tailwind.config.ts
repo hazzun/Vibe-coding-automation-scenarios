@@ -24,8 +24,9 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				point: '#FF6B00',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
+					DEFAULT: '#FF6B00',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {

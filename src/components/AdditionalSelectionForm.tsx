@@ -213,7 +213,7 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
               className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors
                 ${procedure === 'additional' ? 'border-point bg-point/5' : 'border-input hover:bg-accent'}`}
             >
-              <RadioGroupItem value="additional" id="additional" />
+              <RadioGroupItem value="additional" id="additional" className="text-point" />
               <span>추가경정</span>
             </Label>
             <Label
@@ -221,7 +221,7 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
               className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors
                 ${procedure === 'early' ? 'border-point bg-point/5' : 'border-input hover:bg-accent'}`}
             >
-              <RadioGroupItem value="early" id="early" />
+              <RadioGroupItem value="early" id="early" className="text-point" />
               <span>조기집행</span>
             </Label>
             <Label
@@ -229,7 +229,7 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
               className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors
                 ${procedure === 'transfer' ? 'border-point bg-point/5' : 'border-input hover:bg-accent'}`}
             >
-              <RadioGroupItem value="transfer" id="transfer" />
+              <RadioGroupItem value="transfer" id="transfer" className="text-point" />
               <span>이관</span>
             </Label>
             <Label
@@ -237,7 +237,7 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
               className={`flex items-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors
                 ${procedure === 'diversion' ? 'border-point bg-point/5' : 'border-input hover:bg-accent'}`}
             >
-              <RadioGroupItem value="diversion" id="diversion" />
+              <RadioGroupItem value="diversion" id="diversion" className="text-point" />
               <span>전용</span>
             </Label>
           </RadioGroup>
@@ -246,29 +246,24 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
         <Separator />
 
         {/* 버튼 영역 */}
-        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <div className="flex justify-between pt-4">
           <Button
+            type="button"
             variant="outline"
             onClick={onBack}
-            className="order-1 sm:order-none"
             disabled={isLoading || localLoading}
+            className="text-gray-500"
           >
-            <ArrowLeft className="h-4 w-4 mr-1" />
+            <ArrowLeft className="h-4 w-4 mr-2" />
             이전으로
           </Button>
           <Button
+            type="button"
             onClick={handleConfirm}
-            className="bg-point hover:bg-point/90 text-white"
             disabled={!amount || !procedure || isLoading || localLoading}
+            className="bg-point hover:bg-point/90 text-white"
           >
-            {(isLoading || localLoading) ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                처리 중...
-              </>
-            ) : (
-              '최종 답변 받기'
-            )}
+            {isLoading || localLoading ? '처리중...' : '답변 받기'}
           </Button>
         </div>
       </CardContent>

@@ -32,22 +32,22 @@ const QuestionHistory = ({ questions, onQuestionSelect }: QuestionHistoryProps) 
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" />
-          질문 기록
+      <CardHeader className="px-4 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+          <History className="h-5 w-5 sm:h-6 sm:w-6 text-point" />
+          최근 질문 내역
         </CardTitle>
-        <CardDescription>
-          최근 질문한 내용들을 확인하고 다시 볼 수 있습니다.
+        <CardDescription className="text-sm sm:text-base">
+          이전에 문의하신 내용을 다시 확인할 수 있습니다.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-3">
             {questions.map((item) => (
               <div
                 key={item.id}
-                className="p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                className="p-4 border border-border rounded-lg hover:bg-point/5 transition-colors cursor-pointer"
                 onClick={() => onQuestionSelect?.(item)}
               >
                 <div className="flex items-start justify-between gap-3">
