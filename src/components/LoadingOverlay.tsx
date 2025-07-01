@@ -1,14 +1,13 @@
-
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface LoadingOverlayProps {
   message: string;
-  isVisible: boolean;
+  isLoading: boolean;
 }
 
-const LoadingOverlay = ({ message, isVisible }: LoadingOverlayProps) => {
-  if (!isVisible) return null;
+const LoadingOverlay = ({ message, isLoading }: LoadingOverlayProps) => {
+  if (!isLoading) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">

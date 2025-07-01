@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/lib/supabase';
 
-type QuestionHistoryItem = Database['public']['Tables']['question_history']['Row'];
-type QuestionHistoryInsert = Database['public']['Tables']['question_history']['Insert'];
+type Question = Database['public']['Tables']['questions']['Row'];
+type QuestionInsert = Database['public']['Tables']['questions']['Insert'];
 
 export const useQuestionHistory = () => {
-  const [history, setHistory] = useState<QuestionHistoryItem[]>([]);
+  const [history, setHistory] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +17,7 @@ export const useQuestionHistory = () => {
       setError(null);
       
       const { data, error: fetchError } = await supabase
-        .from('question_history')
+        .from('questions')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -37,13 +37,13 @@ export const useQuestionHistory = () => {
 
     // 실시간 업데이트 구독
     const channel = supabase
-      .channel('question_history_changes')
+      .channel('questions_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'question_history'
+          table: 'questions'
         },
         () => {
           fetchHistory();
@@ -57,14 +57,17 @@ export const useQuestionHistory = () => {
   }, []);
 
   // 새 질문 추가
-  const addQuestion = async (question: Omit<QuestionHistoryInsert, 'created_at'>) => {
+  const addQuestion = async (question: QuestionInsert) => {
     try {
       setError(null);
       const { error: insertError } = await supabase
-        .from('question_history')
+        .from('questions')
         .insert([question]);
 
       if (insertError) throw insertError;
+      
+      // 성공적으로 추가된 후 목록 새로고침
+      await fetchHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : '질문을 저장하는데 실패했습니다.');
       throw err;
@@ -76,11 +79,14 @@ export const useQuestionHistory = () => {
     try {
       setError(null);
       const { error: deleteError } = await supabase
-        .from('question_history')
+        .from('questions')
         .delete()
         .eq('id', id);
 
       if (deleteError) throw deleteError;
+      
+      // 성공적으로 삭제된 후 목록 새로고침
+      await fetchHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : '질문을 삭제하는데 실패했습니다.');
       throw err;
@@ -92,11 +98,14 @@ export const useQuestionHistory = () => {
     try {
       setError(null);
       const { error: deleteError } = await supabase
-        .from('question_history')
+        .from('questions')
         .delete()
         .neq('id', '0'); // 모든 레코드 삭제
 
       if (deleteError) throw deleteError;
+      
+      // 성공적으로 삭제된 후 목록 새로고침
+      await fetchHistory();
     } catch (err) {
       setError(err instanceof Error ? err.message : '질문 기록을 삭제하는데 실패했습니다.');
       throw err;

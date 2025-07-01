@@ -3,43 +3,32 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import QuestionForm from '@/components/QuestionForm';
 import AdditionalSelectionForm from '@/components/AdditionalSelectionForm';
-import CategoryDisplay from '@/components/CategoryDisplay';
 import AnswerDisplay from '@/components/AnswerDisplay';
 import QuestionHistory from '@/components/QuestionHistory';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { toast } from '@/hooks/use-toast';
 import { useQuestionHistory } from '@/hooks/use-question-history';
+import type { Database } from '@/lib/supabase';
 
-interface QuestionHistoryItem {
-  id: string;
-  question: string;
-  category: string;
-  timestamp: string;
-  confidence: number;
-  answer: string;
-  approver?: string;
-  document?: string;
-  webhookResponse?: any;
-}
+type Question = Database['public']['Tables']['questions']['Row'];
 
 interface ClassificationResult {
   question: string;
   category: string;
   confidence: number;
-  timestamp: string;
 }
 
-interface CurrentSession {
-  question: string;
-  category: string;
-  confidence: number;
+interface CurrentSession extends ClassificationResult {
   answer: string;
-  timestamp: string;
-  approver?: string;
-  document?: string;
   amount?: string;
   procedure?: string;
-  webhookResponse?: any;
+  approver?: string;
+  document?: string;
+  webhookResponse?: {
+    결재라인: string;
+    참고규정항목: string;
+    설명: string;
+  };
 }
 
 const Index = () => {
@@ -151,8 +140,6 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const timestamp = new Date().toLocaleString('ko-KR');
-      
       let category = '예산 관련 질문';
       let confidence = 0.8;
       
@@ -164,8 +151,7 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
       const classification: ClassificationResult = {
         question,
         category,
-        confidence,
-        timestamp
+        confidence
       };
       
       setClassificationResult(classification);
@@ -197,25 +183,30 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const aiResponse = mockAIResponse(classificationResult.question, selections.amount, selections.procedure);
-      
       const session: CurrentSession = {
-        ...classificationResult,
-        answer: aiResponse.answer,
+        question: classificationResult.question,
+        category: classificationResult.category,
+        confidence: classificationResult.confidence,
+        answer: selections.webhookResponse?.설명 || '',
         amount: selections.amount,
         procedure: selections.procedure,
         webhookResponse: selections.webhookResponse
       };
+
+      // 데이터베이스에 질문 저장
+      await addQuestion({
+        question: session.question,
+        category: session.category,
+        confidence: session.confidence,
+        answer: session.answer,
+        amount: session.amount || null,
+        procedure: session.procedure || null,
+        approver: session.webhookResponse?.결재라인 || null,
+        document: session.webhookResponse?.참고규정항목 || null,
+        user_id: null
+      });
       
       setCurrentSession(session);
-      
-      // 질문 기록에 추가
-      const historyItem: QuestionHistoryItem = {
-        id: Date.now().toString(),
-        ...session,
-      };
-      addQuestion(historyItem);
-      
       setCurrentStep('result');
       
       toast({
@@ -224,6 +215,7 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
       });
       
     } catch (error) {
+      console.error('Error in handleSelectionConfirm:', error);
       toast({
         title: "오류 발생",
         description: "답변 생성 중 오류가 발생했습니다. 다시 시도해주세요.",
@@ -242,92 +234,66 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
 
   const handleBackToSelection = () => {
     setCurrentStep('selection');
-    setCurrentSession(null);
   };
 
   const handleFeedback = (isPositive: boolean) => {
     toast({
-      title: isPositive ? "피드백 감사합니다" : "피드백이 저장되었습니다",
-      description: isPositive 
-        ? "긍정적인 피드백이 AI 개선에 도움이 됩니다." 
-        : "피드백을 바탕으로 답변 품질을 개선하겠습니다.",
+      title: isPositive ? "긍정적인 피드백" : "부정적인 피드백",
+      description: isPositive ? "답변이 도움이 되었다니 기쁩니다." : "더 나은 답변을 제공하도록 하겠습니다.",
     });
   };
 
-  const handleHistorySelect = (item: QuestionHistoryItem) => {
+  const handleHistorySelect = (item: Question) => {
     const session: CurrentSession = {
       question: item.question,
       category: item.category,
       confidence: item.confidence,
       answer: item.answer,
-      timestamp: item.timestamp,
-      approver: item.approver,
-      document: item.document,
-      webhookResponse: item.webhookResponse
+      amount: item.amount || undefined,
+      procedure: item.procedure || undefined,
+      approver: item.approver || undefined,
+      document: item.document || undefined
     };
+    
     setCurrentSession(session);
     setCurrentStep('result');
   };
 
-  const resetToInitial = () => {
-    setCurrentStep('question');
-    setClassificationResult(null);
-    setCurrentSession(null);
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="container mx-auto py-6 space-y-8">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="space-y-6 sm:space-y-8">
-          {/* 단계별 컨텐츠 */}
-          {currentStep === 'question' && (
-            <QuestionForm 
-              onSubmit={handleQuestionSubmit}
-              isLoading={isLoading}
-            />
-          )}
-          
-          {currentStep === 'selection' && classificationResult && (
-            <AdditionalSelectionForm
-              question={classificationResult.question}
-              category={classificationResult.category}
-              confidence={classificationResult.confidence}
-              onBack={handleBackToQuestion}
-              onConfirm={handleSelectionConfirm}
-            />
-          )}
-          
-          {currentStep === 'result' && currentSession && (
-            <div className="space-y-4 sm:space-y-6">
-              <AnswerDisplay
-                question={currentSession.question}
-                answer={currentSession.answer}
-                category={currentSession.category}
-                timestamp={currentSession.timestamp}
-                webhookResponse={currentSession.webhookResponse}
-                onFeedback={handleFeedback}
-              />
-              <div className="text-center">
-                <Button onClick={resetToInitial} variant="outline" className="border-point text-point hover:bg-point hover:text-white">
-                  새로운 질문하기
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {/* 질문 기록 - 메인 화면이나 결과 화면에서만 표시 */}
-          {(currentStep === 'question' || currentStep === 'result') && (
-            <QuestionHistory
-              questions={questionHistory}
-              onQuestionSelect={handleHistorySelect}
-            />
-          )}
-        </div>
-      </main>
+      {isLoading && <LoadingOverlay isLoading={isLoading} message={loadingMessage} />}
 
-      <LoadingOverlay message={loadingMessage} isVisible={isLoading} />
+      <div className="space-y-8">
+        {currentStep === 'question' && (
+          <>
+            <QuestionForm onSubmit={handleQuestionSubmit} isLoading={isLoading} />
+            <QuestionHistory questions={questionHistory} onQuestionSelect={handleHistorySelect} />
+          </>
+        )}
+
+        {currentStep === 'selection' && classificationResult && (
+          <AdditionalSelectionForm
+            question={classificationResult.question}
+            category={classificationResult.category}
+            onBack={handleBackToQuestion}
+            onConfirm={handleSelectionConfirm}
+            isLoading={isLoading}
+          />
+        )}
+
+        {currentStep === 'result' && currentSession && (
+          <AnswerDisplay
+            question={currentSession.question}
+            answer={currentSession.answer}
+            category={currentSession.category}
+            webhookResponse={currentSession.webhookResponse}
+            onBack={handleBackToSelection}
+            onFeedback={handleFeedback}
+          />
+        )}
+      </div>
     </div>
   );
 };

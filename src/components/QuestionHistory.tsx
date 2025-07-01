@@ -1,22 +1,16 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { History, MessageCircle, Clock, ArrowRight } from 'lucide-react';
+import type { Database } from '@/lib/supabase';
 
-interface QuestionHistoryItem {
-  id: string;
-  question: string;
-  category: string;
-  timestamp: string;
-  confidence: number;
-}
+type Question = Database['public']['Tables']['questions']['Row'];
 
 interface QuestionHistoryProps {
-  questions: QuestionHistoryItem[];
-  onQuestionSelect?: (question: QuestionHistoryItem) => void;
+  questions: Question[];
+  onQuestionSelect?: (question: Question) => void;
 }
 
 const QuestionHistory = ({ questions, onQuestionSelect }: QuestionHistoryProps) => {
@@ -67,7 +61,7 @@ const QuestionHistory = ({ questions, onQuestionSelect }: QuestionHistoryProps) 
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {item.timestamp}
+                        {new Date(item.created_at).toLocaleString()}
                       </div>
                       <Badge variant="secondary" className="text-xs">
                         {item.category}
