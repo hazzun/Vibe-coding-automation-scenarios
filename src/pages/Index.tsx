@@ -22,8 +22,6 @@ interface CurrentSession extends ClassificationResult {
   answer: string;
   amount?: string;
   procedure?: string;
-  approver?: string;
-  document?: string;
   webhookResponse?: {
     결재라인: string;
     참고규정항목: string;
@@ -198,7 +196,7 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
         question: session.question,
         category: session.category,
         confidence: session.confidence,
-        answer: session.answer,
+        answer: JSON.stringify(session.webhookResponse),
         amount: session.amount || null,
         procedure: session.procedure || null,
         approver: session.webhookResponse?.결재라인 || null,
@@ -244,6 +242,17 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
   };
 
   const handleHistorySelect = (item: Question) => {
+    let webhookResponse;
+    try {
+      webhookResponse = JSON.parse(item.answer);
+    } catch (e) {
+      webhookResponse = {
+        결재라인: item.approver || '데이터가 없습니다.',
+        참고규정항목: item.document || '데이터가 없습니다.',
+        설명: item.answer || '데이터가 없습니다.'
+      };
+    }
+
     const session: CurrentSession = {
       question: item.question,
       category: item.category,
@@ -251,8 +260,7 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
       answer: item.answer,
       amount: item.amount || undefined,
       procedure: item.procedure || undefined,
-      approver: item.approver || undefined,
-      document: item.document || undefined
+      webhookResponse
     };
     
     setCurrentSession(session);

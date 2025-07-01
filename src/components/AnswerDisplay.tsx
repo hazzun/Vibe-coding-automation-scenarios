@@ -1,10 +1,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ThumbsUp, ThumbsDown, CheckCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface AnswerDisplayProps {
+  question: string;
+  answer: string;
+  category: string;
   webhookResponse?: {
     결재라인: string;
     참고규정항목: string;
@@ -15,10 +18,26 @@ interface AnswerDisplayProps {
 }
 
 const AnswerDisplay = ({
-  webhookResponse,
+  question,
+  answer,
+  category,
+  webhookResponse: initialWebhookResponse,
   onBack,
   onFeedback,
 }: AnswerDisplayProps) => {
+  // answer가 JSON 문자열인 경우 파싱
+  const webhookResponse = initialWebhookResponse || (() => {
+    try {
+      return JSON.parse(answer);
+    } catch (e) {
+      return {
+        결재라인: '데이터가 없습니다.',
+        참고규정항목: '데이터가 없습니다.',
+        설명: answer || '데이터가 없습니다.'
+      };
+    }
+  })();
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">
       {/* 답변 카드 */}
@@ -63,51 +82,41 @@ const AnswerDisplay = ({
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* 피드백 섹션 */}
-      <div className="bg-white p-4 rounded-lg shadow space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-gray-600">이 답변이 도움이 되었나요?</span>
-          <div className="flex gap-2">
+          {/* 피드백 버튼 */}
+          <div className="flex items-center justify-end gap-2 pt-4">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => onFeedback(true)}
-              className="border-point text-point hover:bg-point/5"
+              className="text-green-600 hover:text-green-700"
             >
-              <ThumbsUp className="h-4 w-4 mr-2" />
+              <ThumbsUp className="h-4 w-4 mr-1" />
               도움됨
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => onFeedback(false)}
-              className="text-gray-500 hover:bg-gray-50"
+              className="text-red-600 hover:text-red-700"
             >
-              <ThumbsDown className="h-4 w-4 mr-2" />
-              아니요
+              <ThumbsDown className="h-4 w-4 mr-1" />
+              도움안됨
             </Button>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <Separator />
-
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="text-gray-500"
-          >
-            새로운 질문하기
-          </Button>
-          <Button
-            variant="outline"
-            className="text-point border-point hover:bg-point/5"
-            onClick={() => window.print()}
-          >
-            답변 복사
-          </Button>
-        </div>
+      {/* 뒤로가기 버튼 */}
+      <div className="flex justify-center">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="text-point hover:text-point/90"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          다시 질문하기
+        </Button>
       </div>
     </div>
   );
