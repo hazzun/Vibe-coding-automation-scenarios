@@ -8,6 +8,7 @@ import AnswerDisplay from '@/components/AnswerDisplay';
 import QuestionHistory from '@/components/QuestionHistory';
 import LoadingOverlay from '@/components/LoadingOverlay';
 import { toast } from '@/hooks/use-toast';
+import { useQuestionHistory } from '@/hooks/use-question-history';
 
 interface QuestionHistoryItem {
   id: string;
@@ -47,7 +48,7 @@ const Index = () => {
   const [currentStep, setCurrentStep] = useState<'question' | 'selection' | 'result'>('question');
   const [classificationResult, setClassificationResult] = useState<ClassificationResult | null>(null);
   const [currentSession, setCurrentSession] = useState<CurrentSession | null>(null);
-  const [questionHistory, setQuestionHistory] = useState<QuestionHistoryItem[]>([]);
+  const { history: questionHistory, addQuestion } = useQuestionHistory();
 
   // 실제 구현에서는 백엔드 API 호출
   const mockAIResponse = (question: string, amount?: string, procedure?: string) => {
@@ -148,15 +149,13 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
     setLoadingMessage('질문 내용 분석중...');
     
     try {
-      // 실제 구현에서는 API 호출
-      await new Promise(resolve => setTimeout(resolve, 2000)); // 로딩 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const timestamp = new Date().toLocaleString('ko-KR');
       
       let category = '예산 관련 질문';
       let confidence = 0.8;
       
-      // 웹훅에서 받은 분류 데이터가 있으면 사용
       if (categoryData) {
         category = categoryData.category || categoryData.keyword || category;
         confidence = categoryData.confidence || confidence;
@@ -196,39 +195,32 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
     setLoadingMessage('최종 답변 생성중...');
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 로딩 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const aiResponse = mockAIResponse(
-        classificationResult.question, 
-        selections.amount, 
-        selections.procedure
-      );
+      const aiResponse = mockAIResponse(classificationResult.question, selections.amount, selections.procedure);
       
       const session: CurrentSession = {
-        question: classificationResult.question,
-        category: classificationResult.category,
-        confidence: classificationResult.confidence,
+        ...classificationResult,
         answer: aiResponse.answer,
-        timestamp: classificationResult.timestamp,
         amount: selections.amount,
         procedure: selections.procedure,
         webhookResponse: selections.webhookResponse
       };
       
       setCurrentSession(session);
-      setCurrentStep('result');
       
       // 질문 기록에 추가
       const historyItem: QuestionHistoryItem = {
         id: Date.now().toString(),
-        ...session
+        ...session,
       };
+      addQuestion(historyItem);
       
-      setQuestionHistory(prev => [historyItem, ...prev]);
+      setCurrentStep('result');
       
       toast({
-        title: "최종 답변 생성 완료",
-        description: "선택하신 조건에 따른 맞춤 답변이 생성되었습니다.",
+        title: "답변 생성 완료",
+        description: "AI가 답변을 생성했습니다.",
       });
       
     } catch (error) {
