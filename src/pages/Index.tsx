@@ -226,8 +226,12 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
   };
 
   const handleBackToQuestion = () => {
+    // 모든 상태를 초기화
     setCurrentStep('question');
     setClassificationResult(null);
+    setCurrentSession(null);
+    setIsLoading(false);
+    setLoadingMessage('');
   };
 
   const handleBackToSelection = () => {
@@ -297,7 +301,7 @@ IT 장비의 경우 별도의 IT팀 승인이 추가로 필요합니다.`,
             answer={currentSession.answer}
             category={currentSession.category}
             webhookResponse={currentSession.webhookResponse}
-            onBack={handleBackToSelection}
+            onBack={handleBackToQuestion}
             onFeedback={handleFeedback}
           />
         )}

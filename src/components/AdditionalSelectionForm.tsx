@@ -65,47 +65,55 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        const responseText = await response.text();
-        console.log('웹훅 응답 텍스트:', responseText);
+      console.log('응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        try {
-          // 응답이 JSON 형식인 경우
-          if (responseText && responseText.trim() !== 'Accepted') {
-            const parsedResponse = JSON.parse(responseText);
-            console.log('파싱된 웹훅 응답:', parsedResponse);
-            return {
-              결재라인: parsedResponse.결재라인 || '데이터가 없습니다.',
-              참고규정항목: parsedResponse.참고규정항목 || '데이터가 없습니다.',
-              설명: parsedResponse.설명 || '데이터가 없습니다.'
-            };
-          }
-        } catch (jsonError) {
-          console.error('JSON 파싱 오류:', jsonError);
-        }
+      const responseText = await response.text();
+      console.log('웹훅 응답 텍스트:', responseText);
 
-        // JSON이 아니거나 파싱 실패 시 기본 응답
+      // 응답이 비어있거나 'Accepted'인 경우 기본값 반환
+      if (!responseText || responseText.trim() === '' || responseText.trim() === 'Accepted') {
+        console.log('응답이 비어있거나 Accepted입니다. 기본값을 반환합니다.');
         return {
-          결재라인: '데이터가 없습니다.',
-          참고규정항목: '데이터가 없습니다.',
-          설명: '데이터가 없습니다.'
+          결재라인: '처리 중입니다. 잠시 후 다시 시도해주세요.',
+          참고규정항목: '처리 중입니다. 잠시 후 다시 시도해주세요.',
+          설명: '처리 중입니다. 잠시 후 다시 시도해주세요.'
         };
       }
 
-      throw new Error(`HTTP error! status: ${response.status}`);
+      try {
+        const parsedResponse = JSON.parse(responseText);
+        console.log('파싱된 웹훅 응답:', parsedResponse);
+        
+        // 응답 데이터 검증
+        if (!parsedResponse.결재라인 && !parsedResponse.참고규정항목 && !parsedResponse.설명) {
+          throw new Error('응답 데이터가 올바르지 않습니다.');
+        }
 
+        return {
+          결재라인: parsedResponse.결재라인 || '데이터가 없습니다.',
+          참고규정항목: parsedResponse.참고규정항목 || '데이터가 없습니다.',
+          설명: parsedResponse.설명 || '데이터가 없습니다.'
+        };
+      } catch (jsonError) {
+        console.error('JSON 파싱 오류:', jsonError);
+        throw new Error('응답 데이터 파싱에 실패했습니다.');
+      }
     } catch (error) {
       console.error('웹훅 전송 실패:', error);
-      return {
-        결재라인: '데이터가 없습니다.',
-        참고규정항목: '데이터가 없습니다.',
-        설명: '데이터가 없습니다.'
-      };
+      toast({
+        title: "처리 실패",
+        description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
@@ -131,14 +139,22 @@ const AdditionalSelectionForm = ({ question, category, onBack, onConfirm, isLoad
         description: "Make.com으로 데이터가 전송되었습니다.",
       });
 
-      onConfirm({ amount: amountInWon, procedure, webhookResponse });
+      // 응답이 '처리 중' 상태인 경우 3초 후 다시 시도
+      if (webhookResponse.결재라인.includes('처리 중')) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        try {
+          const retryResponse = await sendToWebhook(amountInWon, procedure);
+          onConfirm({ amount: amountInWon, procedure, webhookResponse: retryResponse });
+        } catch (retryError) {
+          // 재시도 실패 시 원래 응답 사용
+          onConfirm({ amount: amountInWon, procedure, webhookResponse });
+        }
+      } else {
+        onConfirm({ amount: amountInWon, procedure, webhookResponse });
+      }
     } catch (error) {
       console.error('handleConfirm 오류:', error);
-      toast({
-        title: "처리 실패",
-        description: "요청 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      });
+      // sendToWebhook에서 이미 toast를 표시하므로 여기서는 생략
     } finally {
       setLocalLoading(false);
     }

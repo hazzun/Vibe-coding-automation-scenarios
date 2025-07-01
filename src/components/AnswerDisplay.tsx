@@ -107,7 +107,7 @@ const AnswerDisplay = ({
         </CardContent>
       </Card>
 
-      {/* 뒤로가기 버튼 */}
+      {/* 새로운 질문하기 버튼 */}
       <div className="flex justify-center">
         <Button
           variant="ghost"
@@ -115,7 +115,7 @@ const AnswerDisplay = ({
           className="text-point hover:text-point/90"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
-          다시 질문하기
+          새로운 질문하기
         </Button>
       </div>
     </div>
